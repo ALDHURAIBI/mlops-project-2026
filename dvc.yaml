@@ -1,0 +1,35 @@
+stages:
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+    - data/raw/NF-UNSW-NB15-v3.csv
+    - src/prepare.py
+    params:
+    - prepare
+    outs:
+    - data/prepared
+  train:
+    cmd: python src/train.py
+    deps:
+    - data/prepared
+    - src/train.py
+    params:
+    - prepare.seed
+    - prepare.target
+    - train
+    outs:
+    - evaluation/validation_model_comparison.csv
+    - models
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+    - data/prepared
+    - models
+    - src/evaluate.py
+    params:
+    - prepare.target
+    outs:
+    - evaluation/plots
+    metrics:
+    - evaluation/metrics.json:
+        cache: false
