@@ -48,19 +48,19 @@ stages:
             max_iter: 1000
             class_weight: balanced
           random_forest:
-            n_estimators: 100
-            max_depth: 12
-            min_samples_leaf: 5
+            n_estimators: 150
+            max_depth: 16
+            min_samples_leaf: 3
             class_weight: balanced_subsample
     outs:
     - path: evaluation/validation_model_comparison.csv
       hash: md5
-      md5: 6b1fb67c18d375604763e0a57ba20948
-      size: 399
+      md5: 7e648208522f96b653063f571a303488
+      size: 400
     - path: models
       hash: md5
-      md5: 04e9e0cb882db2dca39807a107f2cd60.dir
-      size: 819371
+      md5: cf0920c5ff71757b5462023007c01103.dir
+      size: 1414252
       nfiles: 2
   evaluate:
     cmd: python src/evaluate.py
@@ -72,8 +72,8 @@ stages:
       nfiles: 5
     - path: models
       hash: md5
-      md5: 04e9e0cb882db2dca39807a107f2cd60.dir
-      size: 819371
+      md5: cf0920c5ff71757b5462023007c01103.dir
+      size: 1414252
       nfiles: 2
     - path: src/evaluate.py
       hash: md5
@@ -85,10 +85,10 @@ stages:
     outs:
     - path: evaluation/metrics.json
       hash: md5
-      md5: 969793df719da377a57af38fd4e260df
+      md5: dfb4a4d38a40f4a350ed2f7450cc2928
       size: 354
     - path: evaluation/plots
       hash: md5
-      md5: 9ad2b91d4f59daadaa06657506b69edd.dir
-      size: 73829
+      md5: 7d089b0e32712e4d4fc5f6540d33b94e.dir
+      size: 73198
       nfiles: 2

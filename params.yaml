@@ -25,7 +25,7 @@ train:
 
   # Random Forest
   random_forest:
-    n_estimators: 100
-    max_depth: 12
-    min_samples_leaf: 5
+    n_estimators: 150
+    max_depth: 16
+    min_samples_leaf: 3
     class_weight: balanced_subsample
