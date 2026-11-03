@@ -1,0 +1,32 @@
+
+# Python virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# macOS files
+.DS_Store
+
+# Local credentials and secrets
+.env
+.env.*
+!.env.example
+*.key
+
+# Large data and generated ML artifacts
+# These will be managed by DVC in later steps.
+# data/raw/
+# data/prepared/
+# models/
+# evaluation/plots/
+
+# Local DVC cache and temporary files
+.dvc/cache/
+.dvc/tmp/

@@ -1,0 +1,31 @@
+
+# ============================================================
+# MLOps Project 2026 - Network Intrusion Detection
+# ============================================================
+# Central configuration for reproducible ML experiments.
+# Later, DVC will track changes to these parameters.
+
+# Data preparation configuration
+prepare:
+  seed: 42
+  sample_size: 200000
+  sample_fraction: 0.10
+  test_size: 0.20
+  validation_size: 0.20
+  target: Label
+
+# Model training configuration
+train:
+  model_selection_metric: pr_auc
+
+  # Logistic Regression
+  logistic_regression:
+    max_iter: 1000
+    class_weight: balanced
+
+  # Random Forest
+  random_forest:
+    n_estimators: 100
+    max_depth: 12
+    min_samples_leaf: 5
+    class_weight: balanced_subsample
