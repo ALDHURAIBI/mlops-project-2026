@@ -159,6 +159,7 @@ typing_extensions==4.16.0
 tzdata==2026.6
 tzlocal==5.4.5
 urllib3==2.8.0
+uv==0.13.7
 uvicorn==0.54.0
 vine==5.1.0
 voluptuous==0.16.0

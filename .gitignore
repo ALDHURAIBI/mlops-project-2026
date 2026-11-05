@@ -35,3 +35,6 @@ __pycache__/
 # Local BentoML API test requests
 test_request.json
 test_attack_request.json
+
+# Generated Google Cloud authentication credentials
+gha-creds-*.json
