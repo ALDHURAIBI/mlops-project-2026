@@ -32,6 +32,7 @@ configobj==5.0.9
 contourpy==1.4.0
 cryptography==50.0.2
 cycler==0.12.1
+decorator==5.3.1
 dictdiffer==0.10.0
 diskcache==5.6.3
 distro==1.9.0
@@ -39,6 +40,7 @@ dpath==2.2.0
 dulwich==1.2.20
 dvc==3.67.1
 dvc-data==3.18.3
+dvc-gs==3.1.0
 dvc-http==2.32.0
 dvc-objects==5.2.0
 dvc-render==1.0.2
@@ -52,9 +54,22 @@ fonttools==4.68.0
 frozenlist==1.8.0
 fsspec==2026.9.0
 funcy==2.1
+gcsfs==2026.10.1
 gitdb==4.0.12
 GitPython==3.2.1
+google-api-core==2.43.2
+google-auth==2.62.1
+google-auth-oauthlib==1.5.0
+google-cloud-core==2.8.0
+google-cloud-storage==3.17.1
+google-cloud-storage-control==1.17.0
+google-crc32c==1.9.0
+google-resumable-media==2.11.0
+googleapis-common-protos==1.76.0
 grandalf==0.8
+grpc-google-iam-v1==0.14.6
+grpcio==1.85.1
+grpcio-status==1.85.1
 gto==1.10.1
 h11==0.16.0
 httpcore==1.0.9
@@ -77,6 +92,7 @@ narwhals==2.28.0
 networkx==3.7
 numpy==2.5.4
 nvidia-ml-py==13.615.71
+oauthlib==4.0.1
 omegaconf==2.3.1
 opentelemetry-api==1.45.2
 opentelemetry-instrumentation==0.66b2
@@ -95,7 +111,11 @@ platformdirs==4.14.3
 prometheus_client==0.26.0
 prompt_toolkit==3.0.53
 propcache==0.5.4
+proto-plus==1.29.0
+protobuf==7.36.2
 psutil==7.2.2
+pyasn1==0.6.5
+pyasn1_modules==0.4.2
 pycparser==3.12
 pydantic==2.14.2
 pydantic-settings==2.16.2
@@ -112,6 +132,7 @@ python-multipart==0.0.33
 PyYAML==6.0.3
 pyzmq==27.3.0
 requests==2.34.2
+requests-oauthlib==2.0.0
 rich==15.0.0
 rich-toolkit==0.20.6
 ruamel.yaml==0.19.1

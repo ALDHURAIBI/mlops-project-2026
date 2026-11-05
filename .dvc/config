@@ -1,0 +1,4 @@
+[core]
+    remote = gcs
+['remote "gcs"']
+    url = gs://mlops-arwa-fall2026-bucket/mlops-project-2026/dvc
