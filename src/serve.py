@@ -8,8 +8,8 @@ Input: 39 named network-flow features.
 Output: Attack/Benign prediction and probabilities.
 """
 
-import json
-from pathlib import Path
+#import json
+#from pathlib import Path
 from bentoml.exceptions import UnprocessableEntity
 import bentoml
 import bentoml.sklearn
@@ -18,26 +18,19 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 
-# Project configuration
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-MODEL_DIR = PROJECT_ROOT / "models"
+# ============================================================
+# MODEL CONFIGURATION
+# ============================================================
 
-with open(MODEL_DIR / "model_info.json") as file:
-    model_info = json.load(file)
+MODEL_TAG = "network_intrusion_classifier:latest"
 
-MODEL_TAG = model_info["bentoml_model_tag"]
-FEATURE_COLUMNS = model_info["feature_columns"]
+# Retrieve the model and its metadata.
+bento_model = bentoml.models.get(MODEL_TAG)
 
-ARCHIVE_PATH = (
-    MODEL_DIR / "network_intrusion_classifier.bentomodel"
-)
+FEATURE_COLUMNS = bento_model.info.metadata["feature_columns"]
 
-
-# Restore the model if the local Model Store is empty.
-try:
-    bentoml.models.get(MODEL_TAG)
-except bentoml.exceptions.NotFound:
-    bentoml.models.import_model(str(ARCHIVE_PATH.resolve()))
+print("BentoML model:", bento_model.tag)
+print("Number of features:", len(FEATURE_COLUMNS))
 
 
 # Define the API input format.

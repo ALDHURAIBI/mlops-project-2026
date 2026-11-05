@@ -1,0 +1,19 @@
+
+service: "serve:NetworkIntrusionService"
+
+include:
+  - serve.py
+
+models:
+  - "network_intrusion_classifier:ry5djfwy42ujsosd"
+
+python:
+  packages:
+    - "bentoml==1.4.39"
+    - "scikit-learn==1.9.1"
+    - "pandas==3.1.0"
+    - "numpy==2.5.4"
+    - "pydantic"
+
+docker:
+  python_version: "3.12"
