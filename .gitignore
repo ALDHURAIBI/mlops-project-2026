@@ -31,3 +31,7 @@ __pycache__/
 .dvc/cache/
 .dvc/tmp/
 /models
+
+# Local BentoML API test requests
+test_request.json
+test_attack_request.json
