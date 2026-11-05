@@ -34,7 +34,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import yaml
-
+import bentoml.sklearn
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -298,6 +298,39 @@ model_path = MODEL_DIR / "baseline_model.joblib"
 
 joblib.dump(best_model, model_path)
 
+# Register the selected model in the BentoML Model Store.
+# The complete scikit-learn Pipeline is saved, including preprocessing.
+
+bento_model = bentoml.sklearn.save_model(
+    "network_intrusion_classifier",
+    best_model,
+    metadata={
+        "selected_model": best_model_name,
+        "selection_metric": selection_metric,
+        "feature_columns": feature_columns,
+    },
+)
+
+# Store the exact model version so evaluation and deployment
+# can load the same model rather than an arbitrary latest version.
+bento_model_tag = str(bento_model.tag)
+
+print("BentoML model saved:", bento_model_tag)
+
+# Export the BentoML model to the DVC-tracked models directory.
+# This makes the model portable across machines.
+
+bento_export_path = (
+    MODEL_DIR / "network_intrusion_classifier.bentomodel"
+)
+
+bentoml.models.export_model(
+    bento_model_tag,
+    str(bento_export_path.resolve())
+)
+
+print("BentoML model exported to:", bento_export_path)
+
 # Save the validation comparison table.
 results_path = (
     EVALUATION_DIR / "validation_model_comparison.csv"
@@ -307,6 +340,7 @@ results_df.to_csv(results_path, index=False)
 
 # Save model metadata for reproducibility.
 model_info = {
+    "bentoml_model_tag": bento_model_tag,
     "selected_model": best_model_name,
     "selection_metric": selection_metric,
     "selection_score": float(

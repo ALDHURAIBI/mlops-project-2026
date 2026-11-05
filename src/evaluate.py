@@ -31,6 +31,8 @@ import numpy as np
 import pandas as pd
 import yaml
 import matplotlib
+import bentoml.sklearn
+import bentoml
 
 # Use a non-interactive backend so plots can also be
 # generated automatically on servers and GitHub Actions.
@@ -79,18 +81,42 @@ print("Starting model evaluation...")
 # This model was selected previously using validation data.
 # We do not retrain or change its parameters here.
 
-model_path = MODEL_DIR / "baseline_model.joblib"
+# Load metadata for the selected model.
+# ============================================================
+# 2. LOAD THE TRAINED MODEL
+# ============================================================
 
-model = joblib.load(model_path)
-
+# Read metadata about the selected model.
 with open(MODEL_DIR / "model_info.json") as file:
     model_info = json.load(file)
 
 model_name = model_info["selected_model"]
+bento_model_tag = model_info["bentoml_model_tag"]
+
+# Path to the portable BentoML model archive.
+bento_archive_path = (
+    MODEL_DIR / "network_intrusion_classifier.bentomodel"
+)
+
+# Check whether the exact model version exists locally.
+try:
+    bentoml.models.get(bento_model_tag)
+    print("BentoML model found in local Model Store.")
+
+except bentoml.exceptions.NotFound:
+    print("Model not found locally. Importing from archive...")
+
+    bentoml.models.import_model(
+        str(bento_archive_path.resolve())
+    )
+
+    print("BentoML model imported successfully.")
+
+# Load the model using its exact version.
+model = bentoml.sklearn.load_model(bento_model_tag)
 
 print("Loaded model:", model_name)
-print("Model location:", model_path)
-
+print("BentoML model tag:", bento_model_tag)
 
 # ============================================================
 # 3. LOAD HOLDOUT TEST DATA

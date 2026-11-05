@@ -36,8 +36,8 @@ stages:
       nfiles: 5
     - path: src/train.py
       hash: md5
-      md5: ce40f8fff3c604d1c0b02437583d565e
-      size: 8670
+      md5: 2757d0fc2fcbcd9eeb67dd3541758bbf
+      size: 9676
     params:
       params.yaml:
         prepare.seed: 42
@@ -55,13 +55,13 @@ stages:
     outs:
     - path: evaluation/validation_model_comparison.csv
       hash: md5
-      md5: 7e648208522f96b653063f571a303488
+      md5: be18ce320023e41e0c091979f56f1366
       size: 400
     - path: models
       hash: md5
-      md5: cf0920c5ff71757b5462023007c01103.dir
-      size: 1414252
-      nfiles: 2
+      md5: 0c0afacad0a90613ea32cd21de0017a2.dir
+      size: 1830868
+      nfiles: 3
   evaluate:
     cmd: python src/evaluate.py
     deps:
@@ -72,13 +72,13 @@ stages:
       nfiles: 5
     - path: models
       hash: md5
-      md5: cf0920c5ff71757b5462023007c01103.dir
-      size: 1414252
-      nfiles: 2
+      md5: 0c0afacad0a90613ea32cd21de0017a2.dir
+      size: 1830868
+      nfiles: 3
     - path: src/evaluate.py
       hash: md5
-      md5: 534fa7229aa79ca8bb5ddc693f85e8aa
-      size: 7208
+      md5: a7c1796f6406ec2d4f235ba49358bdad
+      size: 8073
     params:
       params.yaml:
         prepare.target: Label
