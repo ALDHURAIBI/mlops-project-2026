@@ -1,0 +1,49 @@
+name: CI - Checks
+
+# Runs on every pull request to main.
+# These checks can be made mandatory before merging
+# (Settings -> Rules -> Rulesets -> Require status checks: "checks").
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Download source code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # 3. Install project dependencies and check they are consistent
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt ruff
+          python -m pip check
+
+      # 4. Lint: syntax errors and undefined names only
+      - name: Lint with Ruff
+        run: ruff check src --select E9,F63,F7,F82 --output-format=github
+
+      # 5. Make sure every source file compiles
+      - name: Compile Python sources
+        run: python -m compileall -q src
+
+      # 6. Validate the DVC pipeline definition (dvc.yaml + params.yaml)
+      - name: Validate DVC pipeline
+        run: dvc dag
