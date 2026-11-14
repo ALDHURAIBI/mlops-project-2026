@@ -1,14 +1,15 @@
 name: CI - Checks
 
-# Runs on every pull request to main (and again when its labels change).
+# Runs on every pull request to main or dev (and again when its labels change).
 # - checks: lint, compile and pipeline validation. Can be made mandatory before merging
 #   (Settings -> Rules -> Rulesets -> Require status checks: "checks").
-# - release-preview: comments on the PR which release merging it will create.
+# - release-preview: on PRs to main only, comments which release merging it will create.
 
 on:
   pull_request:
     branches:
       - main
+      - dev
     types:
       - opened
       - synchronize
@@ -38,6 +39,7 @@ jobs:
 
       # 3. Install project dependencies and check they are consistent
       - name: Install dependencies
+        id: deps
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt ruff
@@ -45,18 +47,43 @@ jobs:
 
       # 4. Lint: syntax errors and undefined names only
       - name: Lint with Ruff
+        id: lint
         run: ruff check src --select E9,F63,F7,F82 --output-format=github
 
       # 5. Make sure every source file compiles
       - name: Compile Python sources
+        id: compile
         run: python -m compileall -q src
 
       # 6. Validate the DVC pipeline definition (dvc.yaml + params.yaml)
       - name: Validate DVC pipeline
+        id: dvc
         run: dvc dag
 
+      # 7. Summary table shown at the top of the workflow run (always, even if a check failed)
+      - name: Write summary
+        if: always()
+        env:
+          DEPS: ${{ steps.deps.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          COMPILE: ${{ steps.compile.outcome }}
+          DVC: ${{ steps.dvc.outcome }}
+        run: |
+          {
+            echo "## CI checks"
+            echo ""
+            echo "Commit \`${GITHUB_SHA::7}\`"
+            echo ""
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| Dependencies (\`pip check\`) | ${DEPS} |"
+            echo "| Lint (\`ruff\`: syntax errors, undefined names) | ${LINT} |"
+            echo "| Compile sources (\`src/\`) | ${COMPILE} |"
+            echo "| DVC pipeline (\`dvc dag\`) | ${DVC} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   release-preview:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
