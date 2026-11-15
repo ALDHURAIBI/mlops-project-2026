@@ -6,5 +6,6 @@ PyYAML==6.0.3
 dvc==3.67.1
 matplotlib==3.11.2
 joblib==1.6.0
+pyarrow==26.0.1
 dvc-gs
 dvc-gs==3.1.0

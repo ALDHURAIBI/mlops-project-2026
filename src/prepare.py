@@ -165,6 +165,9 @@ excluded_columns = {
     "L7_PROTO",
     "IN_BYTES",
     "OUT_BYTES",
+    # Random DNS transaction ID: an identifier that says
+    # nothing about the flow.
+    "DNS_QUERY_ID",
 }
 
 # Exclude additional IP, timestamp and TTL identifiers.
