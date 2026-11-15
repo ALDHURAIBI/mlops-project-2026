@@ -70,7 +70,7 @@ stages:
     metrics:
     - evaluation/${item.model}/drift/summary.json:
         cache: false
-    plots:
+    outs:
     - evaluation/${item.model}/drift/days.csv:
         cache: false
     - evaluation/${item.model}/drift/families.csv:
@@ -88,9 +88,33 @@ stages:
     - models/network_intrusion_classifier.bentomodel
     - models/model_info.json
 
+# Graphs of dvc plots show / dvc plots diff main (page in dvc_plots/).
+# template daily (.dvc/plots/daily.json): plain lines with the days as categories.
 plots:
 - MCC per day on CIC-IDS2018:
     x: day
+    template: daily
     y:
       evaluation/random_forest/drift/days.csv: [frozen_mcc, retrained_mcc]
       evaluation/autoencoder/drift/days.csv: [frozen_mcc, retrained_mcc]
+- False positive rate per day on CIC-IDS2018 (%):
+    x: day
+    template: daily
+    y:
+      evaluation/random_forest/drift/days.csv: [frozen_false_positive_%, retrained_false_positive_%]
+      evaluation/autoencoder/drift/days.csv: [frozen_false_positive_%, retrained_false_positive_%]
+- Share of flows flagged per day on CIC-IDS2018 (%, no label needed):
+    x: day
+    template: daily
+    y:
+      evaluation/random_forest/drift/days.csv: [frozen_flagged_%, retrained_flagged_%]
+      evaluation/autoencoder/drift/days.csv: [frozen_flagged_%, retrained_flagged_%]
+- Highest feature PSI per day on CIC-IDS2018 (drift alert above 0.25):
+    x: day
+    template: daily
+    y:
+      evaluation/random_forest/drift/days.csv: [psi_vs_unsw, psi_vs_previous_day]
+- evaluation/dummy/plots
+- evaluation/logistic_regression/plots
+- evaluation/random_forest/plots
+- evaluation/autoencoder/plots
