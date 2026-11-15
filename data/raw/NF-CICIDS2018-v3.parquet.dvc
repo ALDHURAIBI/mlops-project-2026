@@ -1,0 +1,5 @@
+outs:
+- md5: b0e1598b41abd82db42e4fbc150b7433
+  size: 832352170
+  hash: md5
+  path: NF-CICIDS2018-v3.parquet
