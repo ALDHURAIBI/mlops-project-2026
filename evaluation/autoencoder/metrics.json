@@ -1,0 +1,16 @@
+{
+  "model": "Autoencoder",
+  "test": {
+    "accuracy": 0.9869023471457549,
+    "precision": 0.8013665202537823,
+    "recall": 0.973325429756965,
+    "f1": 0.8790149892933619,
+    "mcc": 0.876767633947938,
+    "pr_auc": 0.9259965523650121,
+    "true_negatives": 32416,
+    "false_positives": 407,
+    "false_negatives": 45,
+    "true_positives": 1642,
+    "test_samples": 34510
+  }
+}

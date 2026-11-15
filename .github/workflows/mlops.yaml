@@ -96,7 +96,7 @@ jobs:
       # 7. Download only the model tracked by DVC (not the training data)
       - name: Restore DVC model
         run: |
-          dvc pull models
+          dvc pull package
           ls -lh models/
 
       # 8. Restore the registered BentoML model
