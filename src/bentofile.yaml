@@ -5,7 +5,7 @@ include:
   - serve.py
 
 models:
-  - "network_intrusion_classifier:ry5djfwy42ujsosd"
+  - "network_intrusion_classifier:latest"
 
 python:
   packages:

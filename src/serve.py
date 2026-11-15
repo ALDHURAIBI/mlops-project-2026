@@ -4,7 +4,7 @@ serve.py — Network Intrusion Detection API
 MLOps Project 2026 | Chapter 3.2
 
 Serve the selected scikit-learn model with BentoML.
-Input: 39 named network-flow features.
+Input: the named network-flow features of the deployed model.
 Output: Attack/Benign prediction and probabilities.
 """
 

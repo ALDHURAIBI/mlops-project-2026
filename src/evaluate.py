@@ -5,34 +5,33 @@ MLOps Project 2026 | Chapter 1.2
 
 Purpose
 -------
-Evaluate the selected machine learning model on the
-holdout test dataset.
+Evaluate one trained model on the holdout test dataset.
+
+Usage: python src/evaluate.py <model>
+dvc.yaml runs this script once per model.
 
 Inputs:
     data/prepared/test.csv
     data/prepared/feature_columns.json
-    models/baseline_model.joblib
-    models/model_info.json
+    models/<model>/model.joblib
+    models/<model>/model_info.json
     params.yaml
 
 Outputs:
-    evaluation/metrics.json
-    evaluation/plots/confusion_matrix.png
-    evaluation/plots/precision_recall_curve.png
-
-The outputs will later be tracked by DVC.
+    evaluation/<model>/metrics.json
+    evaluation/<model>/plots/confusion_matrix.png
+    evaluation/<model>/plots/precision_recall_curve.png
 """
 
 from pathlib import Path
 import json
+import sys
 
 import joblib
 import numpy as np
 import pandas as pd
 import yaml
 import matplotlib
-import bentoml.sklearn
-import bentoml
 
 # Use a non-interactive backend so plots can also be
 # generated automatically on servers and GitHub Actions.
@@ -46,10 +45,14 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     average_precision_score,
+    matthews_corrcoef,
     confusion_matrix,
     ConfusionMatrixDisplay,
     PrecisionRecallDisplay,
 )
+
+# Model definitions: src/models/ (needed to load custom models).
+from models import attack_score
 
 
 # ============================================================
@@ -58,9 +61,11 @@ from sklearn.metrics import (
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+MODEL = sys.argv[1]
+
 PREPARED_DIR = PROJECT_ROOT / "data/prepared"
-MODEL_DIR = PROJECT_ROOT / "models"
-EVALUATION_DIR = PROJECT_ROOT / "evaluation"
+MODEL_DIR = PROJECT_ROOT / "models" / MODEL
+EVALUATION_DIR = PROJECT_ROOT / "evaluation" / MODEL
 PLOTS_DIR = EVALUATION_DIR / "plots"
 
 EVALUATION_DIR.mkdir(parents=True, exist_ok=True)
@@ -78,52 +83,24 @@ print("Starting model evaluation...")
 # 2. LOAD THE TRAINED MODEL
 # ============================================================
 
-# This model was selected previously using validation data.
+# This model was trained by train.py.
 # We do not retrain or change its parameters here.
 
-# Load metadata for the selected model.
-# ============================================================
-# 2. LOAD THE TRAINED MODEL
-# ============================================================
-
-# Read metadata about the selected model.
 with open(MODEL_DIR / "model_info.json") as file:
     model_info = json.load(file)
 
-model_name = model_info["selected_model"]
-bento_model_tag = model_info["bentoml_model_tag"]
+model_name = model_info["model_name"]
 
-# Path to the portable BentoML model archive.
-bento_archive_path = (
-    MODEL_DIR / "network_intrusion_classifier.bentomodel"
-)
-
-# Check whether the exact model version exists locally.
-try:
-    bentoml.models.get(bento_model_tag)
-    print("BentoML model found in local Model Store.")
-
-except bentoml.exceptions.NotFound:
-    print("Model not found locally. Importing from archive...")
-
-    bentoml.models.import_model(
-        str(bento_archive_path.resolve())
-    )
-
-    print("BentoML model imported successfully.")
-
-# Load the model using its exact version.
-model = bentoml.sklearn.load_model(bento_model_tag)
+model = joblib.load(MODEL_DIR / "model.joblib")
 
 print("Loaded model:", model_name)
-print("BentoML model tag:", bento_model_tag)
 
 # ============================================================
 # 3. LOAD HOLDOUT TEST DATA
 # ============================================================
 
 # The test partition was created by prepare.py.
-# It was not used to train or select the model.
+# It was not used to train or tune the model.
 
 test_df = pd.read_csv(PREPARED_DIR / "test.csv")
 
@@ -157,15 +134,12 @@ print(f"Attack percentage: {y_test.mean() * 100:.2f}%")
 
 y_pred = model.predict(X_test)
 
-# predict_proba() returns class probabilities.
-# We use the probability of Attack (class 1) to
-# calculate average precision and the PR curve.
+# The attack score (probability of Attack for the
+# scikit-learn models, reconstruction error for the
+# autoencoder) is used to calculate average precision
+# and the PR curve.
 
-attack_class_index = list(model.classes_).index(1)
-
-y_proba = model.predict_proba(X_test)[
-    :, attack_class_index
-]
+y_proba = attack_score(model, X_test)
 
 print("\nPrediction completed.")
 
@@ -186,6 +160,10 @@ print("\nPrediction completed.")
 # F1-score:
 # Harmonic mean of precision and recall.
 #
+# MCC (Matthews correlation coefficient):
+# Uses the four cells of the confusion matrix;
+# 1 = perfect, 0 = no better than chance.
+#
 # Average precision (PR-AUC):
 # Summarizes precision-recall performance across
 # probability thresholds.
@@ -204,6 +182,8 @@ f1 = f1_score(
     y_test, y_pred, zero_division=0
 )
 
+mcc = matthews_corrcoef(y_test, y_pred)
+
 pr_auc = average_precision_score(
     y_test, y_proba
 )
@@ -214,6 +194,7 @@ print(f"Accuracy : {accuracy:.4f}")
 print(f"Precision: {precision:.4f}")
 print(f"Recall   : {recall:.4f}")
 print(f"F1-score : {f1:.4f}")
+print(f"MCC      : {mcc:.4f}")
 print(f"PR-AUC   : {pr_auc:.4f}")
 
 
@@ -300,7 +281,7 @@ print("Saved:", pr_curve_path)
 # ============================================================
 
 # Store all metrics in machine-readable JSON format.
-# DVC will later use this file to compare experiments.
+# dvc metrics show compares all models with it.
 
 metrics = {
     "model": model_name,
@@ -309,6 +290,7 @@ metrics = {
         "precision": float(precision),
         "recall": float(recall),
         "f1": float(f1),
+        "mcc": float(mcc),
         "pr_auc": float(pr_auc),
         "true_negatives": int(tn),
         "false_positives": int(fp),

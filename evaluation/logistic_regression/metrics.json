@@ -1,0 +1,16 @@
+{
+  "model": "Logistic Regression",
+  "test": {
+    "accuracy": 0.9967835410026079,
+    "precision": 0.9426966292134832,
+    "recall": 0.994665085951393,
+    "f1": 0.9679838477069512,
+    "mcc": 0.966677436253909,
+    "pr_auc": 0.9650488420881349,
+    "true_negatives": 32721,
+    "false_positives": 102,
+    "false_negatives": 9,
+    "true_positives": 1678,
+    "test_samples": 34510
+  }
+}

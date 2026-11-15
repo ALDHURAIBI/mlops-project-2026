@@ -1,0 +1,17 @@
+{
+  "days": 10,
+  "frozen": {
+    "mean_mcc": 0.0644375450278959,
+    "mean_false_positive_%": 66.60125551443679
+  },
+  "retrained": {
+    "mean_mcc": 0.17212526420064272,
+    "mean_mcc_new_family_days": 0.11277358125580786,
+    "mean_false_positive_%": 0.029874589567118876
+  },
+  "psi_vs_previous_day": {
+    "new_family_days": 7,
+    "alerts_on_new_family_days": 3,
+    "alerts_on_control_days": 0
+  }
+}

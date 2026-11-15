@@ -1,0 +1,16 @@
+{
+  "model": "Dummy",
+  "test": {
+    "accuracy": 0.9511156186612576,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "mcc": 0.0,
+    "pr_auc": 0.04888438133874239,
+    "true_negatives": 32823,
+    "false_positives": 0,
+    "false_negatives": 1687,
+    "true_positives": 0,
+    "test_samples": 34510
+  }
+}
