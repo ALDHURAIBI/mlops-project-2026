@@ -8,28 +8,113 @@ stages:
     - prepare
     outs:
     - data/prepared
+
+  # One stage per model (train@random_forest, train@autoencoder...).
+  # A stage only depends on the file of its model: changing one
+  # model reruns the stages of that model only.
   train:
-    cmd: python src/train.py
+    matrix:
+      model: [dummy, logistic_regression, random_forest, autoencoder]
+    cmd: python src/train.py ${item.model}
     deps:
     - data/prepared
     - src/train.py
+    - src/models/__init__.py
+    - src/models/base.py
+    - src/models/${item.model}.py
     params:
     - prepare.seed
     - prepare.target
-    - train
+    - train.${item.model}
     outs:
-    - evaluation/validation_model_comparison.csv
-    - models
+    - models/${item.model}
+    metrics:
+    - evaluation/${item.model}/validation_metrics.json:
+        cache: false
+
   evaluate:
-    cmd: python src/evaluate.py
+    matrix:
+      model: [dummy, logistic_regression, random_forest, autoencoder]
+    cmd: python src/evaluate.py ${item.model}
     deps:
     - data/prepared
-    - models
+    - models/${item.model}
     - src/evaluate.py
+    - src/models/__init__.py
     params:
     - prepare.target
     outs:
-    - evaluation/plots
+    - evaluation/${item.model}/plots
     metrics:
-    - evaluation/metrics.json:
+    - evaluation/${item.model}/metrics.json:
         cache: false
+
+  # Day-by-day replay on CIC-IDS2018, for the models worth replaying.
+  drift:
+    matrix:
+      model: [random_forest, autoencoder]
+    cmd: python src/drift.py ${item.model}
+    deps:
+    - data/raw/NF-CICIDS2018-v3.parquet
+    - data/prepared
+    - models/${item.model}
+    - src/drift.py
+    - src/models/__init__.py
+    - src/models/base.py
+    - src/models/${item.model}.py
+    params:
+    - prepare.seed
+    - prepare.target
+    - train.${item.model}
+    - drift
+    metrics:
+    - evaluation/${item.model}/drift/summary.json:
+        cache: false
+    outs:
+    - evaluation/${item.model}/drift/days.csv:
+        cache: false
+    - evaluation/${item.model}/drift/families.csv:
+        cache: false
+
+  # Model packaged in the BentoML service (params.yaml, deploy.model).
+  package:
+    cmd: python src/package.py
+    deps:
+    - models/${deploy.model}
+    - src/package.py
+    params:
+    - deploy
+    outs:
+    - models/network_intrusion_classifier.bentomodel
+    - models/model_info.json
+
+# Graphs of dvc plots show / dvc plots diff main (page in dvc_plots/).
+# template daily (.dvc/plots/daily.json): plain lines with the days as categories.
+plots:
+- MCC per day on CIC-IDS2018:
+    x: day
+    template: daily
+    y:
+      evaluation/random_forest/drift/days.csv: [frozen_mcc, retrained_mcc]
+      evaluation/autoencoder/drift/days.csv: [frozen_mcc, retrained_mcc]
+- False positive rate per day on CIC-IDS2018 (%):
+    x: day
+    template: daily
+    y:
+      evaluation/random_forest/drift/days.csv: [frozen_false_positive_%, retrained_false_positive_%]
+      evaluation/autoencoder/drift/days.csv: [frozen_false_positive_%, retrained_false_positive_%]
+- Share of flows flagged per day on CIC-IDS2018 (%, no label needed):
+    x: day
+    template: daily
+    y:
+      evaluation/random_forest/drift/days.csv: [frozen_flagged_%, retrained_flagged_%]
+      evaluation/autoencoder/drift/days.csv: [frozen_flagged_%, retrained_flagged_%]
+- Highest feature PSI per day on CIC-IDS2018 (drift alert above 0.25):
+    x: day
+    template: daily
+    y:
+      evaluation/random_forest/drift/days.csv: [psi_vs_unsw, psi_vs_previous_day]
+- evaluation/dummy/plots
+- evaluation/logistic_regression/plots
+- evaluation/random_forest/plots
+- evaluation/autoencoder/plots

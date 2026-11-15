@@ -15,8 +15,13 @@ prepare:
   target: Label
 
 # Model training configuration
+# One section per model (definitions in src/models/). Every model
+# listed in dvc.yaml is trained, evaluated and, for some, replayed
+# on CIC-IDS2018; compare them with: dvc metrics show
 train:
-  model_selection_metric: pr_auc
+  # Dummy Classifier (lower bound)
+  dummy:
+    strategy: most_frequent
 
   # Logistic Regression
   logistic_regression:
@@ -29,3 +34,22 @@ train:
     max_depth: 16
     min_samples_leaf: 3
     class_weight: balanced_subsample
+
+  # Autoencoder (anomaly detector, trained on benign flows only)
+  autoencoder:
+    hidden_layer_sizes: [32, 8, 32]
+    max_iter: 200
+    train_cap: 200000            # benign flows used for training
+    false_positive_target: 0.01  # share of held-out benign flows flagged
+
+# Model packaged in the BentoML service and deployed (src/package.py)
+deploy:
+  model: random_forest
+
+# Drift replay on NF-CICIDS2018-v3 (src/drift.py)
+drift:
+  sample_fraction: 0.20       # share of the 20 M CIC flows used
+  min_flows_per_day: 10000    # skip days with almost no traffic (27 Feb)
+  retrain_cap: 1500000        # max CIC flows used to retrain each night
+  psi_sample: 200000          # flows per reference for the PSI
+  psi_alert: 0.25             # drift alert when the highest feature PSI exceeds it

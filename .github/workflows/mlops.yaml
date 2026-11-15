@@ -1,6 +1,10 @@
 
 name: MLOps - Build and Publish Docker
 
+# On every merge into main: build the BentoML service and publish the Docker image.
+# If the merged pull request has a release:major / release:minor / release:patch label,
+# also tag the image with the new version, create the GitHub release and comment on the PR.
+
 on:
   push:
     branches:
@@ -8,8 +12,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  id-token: write
+  contents: write        # create GitHub releases
+  id-token: write        # authenticate to Google Cloud (Workload Identity Federation)
+  pull-requests: write   # comment on the merged pull request
 
 jobs:
   build-and-publish:
@@ -26,21 +31,57 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Python
+      # 2. Is this merge a release? Read the release:* label of the merged PR
+      #    (skipped on manual runs, which never create a release)
+      - name: Detect release version
+        id: version
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          PR=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+            --jq '[.[] | select(.base.ref == "main" and .merged_at != null)][0] // empty')
+
+          if [ -z "$PR" ]; then
+            echo "No merged pull request for this commit -> no release"
+            exit 0
+          fi
+
+          PR_NUMBER=$(echo "$PR" | jq -r '.number')
+          TITLE=$(echo "$PR" | jq -r '.title')
+          LABELS=$(echo "$PR" | jq -r '[.labels[].name] | join(",")')
+          echo "Merged PR #${PR_NUMBER}: ${TITLE}"
+
+          read -r BUMP LAST VERSION <<< "$(bash .github/scripts/next_version.sh "$LABELS")"
+
+          if [ -z "$VERSION" ]; then
+            echo "No release:* label -> no release"
+            exit 0
+          fi
+
+          echo "Bump: ${BUMP}  ${LAST} -> ${VERSION}"
+          {
+            echo "version=${VERSION}"
+            echo "title=${VERSION} - ${TITLE}"
+            echo "pr=${PR_NUMBER}"
+          } >> "$GITHUB_OUTPUT"
+
+      # 3. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
 
-      # 3. Install project dependencies
+      # 4. Install project dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           python -m pip check
 
-      # 4. Authenticate securely to Google Cloud
+      # 5. Authenticate securely to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
@@ -48,17 +89,17 @@ jobs:
           workload_identity_provider: projects/704937435550/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: google-service-account@mlops-arwa-fall2026.iam.gserviceaccount.com
 
-      # 5. Install Google Cloud CLI
+      # 6. Install Google Cloud CLI
       - name: Set up Google Cloud CLI
         uses: google-github-actions/setup-gcloud@v3
 
-      # 6. Download DVC-tracked model artifacts
-      - name: Restore DVC artifacts
+      # 7. Download only the model tracked by DVC (not the training data)
+      - name: Restore DVC model
         run: |
-          dvc pull
+          dvc pull package
           ls -lh models/
 
-      # 7. Restore the registered BentoML model
+      # 8. Restore the registered BentoML model
       - name: Import BentoML model
         run: |
           bentoml models import models/network_intrusion_classifier.bentomodel
@@ -73,19 +114,19 @@ jobs:
           print("Restored model:", model.tag)
           PY
 
-      # 8. Build the BentoML service
+      # 9. Build the BentoML service
       - name: Build BentoML artifact
         run: |
           bentoml build src
           bentoml list
 
-      # 9. Configure Docker authentication
+      # 10. Configure Docker authentication
       - name: Configure Docker authentication
         run: |
           gcloud auth configure-docker \
             europe-west6-docker.pkg.dev --quiet
 
-      # 10. Build Docker image for AMD64
+      # 11. Build Docker image for AMD64
       - name: Build Docker image
         run: |
           IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}"
@@ -97,10 +138,52 @@ jobs:
           docker image inspect "$IMAGE_URI" \
             --format '{{.Os}}/{{.Architecture}}'
 
-      # 11. Publish the image
+      # 12. On a release, also tag the image with the version and "latest"
+      - name: Tag image with release version
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          IMAGE_BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}"
+
+          docker tag "${IMAGE_BASE}:${GITHUB_SHA}" "${IMAGE_BASE}:${VERSION}"
+          docker tag "${IMAGE_BASE}:${GITHUB_SHA}" "${IMAGE_BASE}:latest"
+
+      # 13. Publish the image with all its tags
       - name: Push image to Artifact Registry
         run: |
-          IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}"
+          IMAGE_BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}"
 
-          docker push "$IMAGE_URI"
-          echo "Published image: $IMAGE_URI"
+          docker push --all-tags "$IMAGE_BASE"
+          docker image ls "$IMAGE_BASE" --format 'Published image: {{.Repository}}:{{.Tag}}'
+
+      # 14. Create the GitHub release (only if a version was found)
+      - name: Create GitHub release
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TITLE: ${{ steps.version.outputs.title }}
+        run: |
+          gh release create "$VERSION" \
+            --target "$GITHUB_SHA" \
+            --title "$TITLE" \
+            --generate-notes
+
+      # 15. Comment on the merged PR with what was published
+      - name: Comment on pull request
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PR_NUMBER: ${{ steps.version.outputs.pr }}
+        run: |
+          IMAGE_BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}"
+
+          gh pr comment "$PR_NUMBER" --body "**Release ${VERSION} published**
+
+          - Docker image: \`${IMAGE_BASE}:${VERSION}\`
+          - Release: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}
+          - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

@@ -9,8 +9,8 @@ stages:
       size: 577360958
     - path: src/prepare.py
       hash: md5
-      md5: 2f6c1bb7efe83ecaf459caaad0d28491
-      size: 8313
+      md5: 015ed56c5c74296bae76aef875a0b74b
+      size: 8420
     params:
       params.yaml:
         prepare:
@@ -23,21 +23,33 @@ stages:
     outs:
     - path: data/prepared
       hash: md5
-      md5: f8053ef8ecc799d537dc9f15077c4ae1.dir
-      size: 28948061
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
       nfiles: 5
   train:
     cmd: python src/train.py
     deps:
     - path: data/prepared
       hash: md5
-      md5: f8053ef8ecc799d537dc9f15077c4ae1.dir
-      size: 28948061
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
       nfiles: 5
+    - path: src/models/dummy.py
+      hash: md5
+      md5: a9d3739959fb5c1b3a1e0ebadf39c51d
+      size: 307
+    - path: src/models/logistic_regression.py
+      hash: md5
+      md5: a5665c0bae545f18bfbcc98d7df33b65
+      size: 896
+    - path: src/models/random_forest.py
+      hash: md5
+      md5: 6742d35fc007e3153c29f04570ffaaa9
+      size: 894
     - path: src/train.py
       hash: md5
-      md5: 2757d0fc2fcbcd9eeb67dd3541758bbf
-      size: 9676
+      md5: 6afc9291134aad983e227068a52c2575
+      size: 8438
     params:
       params.yaml:
         prepare.seed: 42
@@ -55,25 +67,25 @@ stages:
     outs:
     - path: evaluation/validation_model_comparison.csv
       hash: md5
-      md5: be18ce320023e41e0c091979f56f1366
-      size: 400
+      md5: 849bbb151a7c3d27663adaaaf19012ba
+      size: 383
     - path: models
       hash: md5
-      md5: 0c0afacad0a90613ea32cd21de0017a2.dir
-      size: 1830868
+      md5: 113bd4518397b98385baade0fee59bc4.dir
+      size: 1930768
       nfiles: 3
   evaluate:
     cmd: python src/evaluate.py
     deps:
     - path: data/prepared
       hash: md5
-      md5: f8053ef8ecc799d537dc9f15077c4ae1.dir
-      size: 28948061
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
       nfiles: 5
     - path: models
       hash: md5
-      md5: 0c0afacad0a90613ea32cd21de0017a2.dir
-      size: 1830868
+      md5: 113bd4518397b98385baade0fee59bc4.dir
+      size: 1930768
       nfiles: 3
     - path: src/evaluate.py
       hash: md5
@@ -85,10 +97,519 @@ stages:
     outs:
     - path: evaluation/metrics.json
       hash: md5
-      md5: dfb4a4d38a40f4a350ed2f7450cc2928
-      size: 354
+      md5: 093a7ebda79268f4c9537b0e8570d169
+      size: 353
     - path: evaluation/plots
       hash: md5
-      md5: 7d089b0e32712e4d4fc5f6540d33b94e.dir
-      size: 73198
+      md5: ffc558cf7500ec68176ba14a0d405d98.dir
+      size: 81005
       nfiles: 2
+  drift:
+    cmd: python src/drift.py
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: data/raw/NF-CICIDS2018-v3.parquet
+      hash: md5
+      md5: b0e1598b41abd82db42e4fbc150b7433
+      size: 832352170
+    - path: models
+      hash: md5
+      md5: 113bd4518397b98385baade0fee59bc4.dir
+      size: 1930768
+      nfiles: 3
+    - path: src/drift.py
+      hash: md5
+      md5: 46a8447fb6cc8e364aa6b32a40aa5208
+      size: 11238
+    - path: src/models/random_forest.py
+      hash: md5
+      md5: 6742d35fc007e3153c29f04570ffaaa9
+      size: 894
+    params:
+      params.yaml:
+        drift:
+          sample_fraction: 0.2
+          min_flows_per_day: 10000
+          retrain_cap: 1500000
+          psi_sample: 200000
+          psi_alert: 0.25
+        prepare.seed: 42
+        prepare.target: Label
+        train.random_forest:
+          n_estimators: 150
+          max_depth: 16
+          min_samples_leaf: 3
+          class_weight: balanced_subsample
+    outs:
+    - path: evaluation/drift/days.csv
+      hash: md5
+      md5: d036f8b6381a35f58614d4d25c4e4c84
+      size: 2479
+    - path: evaluation/drift/families.csv
+      hash: md5
+      md5: 2289d78581fbfa6527cf97a4fecda65c
+      size: 799
+    - path: evaluation/drift/summary.json
+      hash: md5
+      md5: 90e265b7d27ddec61a5059d1cec6c5cc
+      size: 406
+  train@dummy:
+    cmd: python src/train.py dummy
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    - path: src/models/base.py
+      hash: md5
+      md5: a6a404ce9932d71df76ebc5a0886a314
+      size: 1018
+    - path: src/models/dummy.py
+      hash: md5
+      md5: d8f2a3c6518666a111d805300efa96ac
+      size: 352
+    - path: src/train.py
+      hash: md5
+      md5: 3bde16c0574965733e9fa7638ead7fdd
+      size: 6040
+    params:
+      params.yaml:
+        prepare.seed: 42
+        prepare.target: Label
+        train.dummy:
+          strategy: most_frequent
+    outs:
+    - path: evaluation/dummy/validation_metrics.json
+      hash: md5
+      md5: 6781dc5e66c2f5468d3b17aba57fb660
+      size: 186
+    - path: models/dummy
+      hash: md5
+      md5: 7107787e02516864ace5b538d751309f.dir
+      size: 2796
+      nfiles: 2
+  train@logistic_regression:
+    cmd: python src/train.py logistic_regression
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    - path: src/models/base.py
+      hash: md5
+      md5: a6a404ce9932d71df76ebc5a0886a314
+      size: 1018
+    - path: src/models/logistic_regression.py
+      hash: md5
+      md5: ef20de09f2bf7f4c0d1980d93d1e0fe9
+      size: 926
+    - path: src/train.py
+      hash: md5
+      md5: 3bde16c0574965733e9fa7638ead7fdd
+      size: 6040
+    params:
+      params.yaml:
+        prepare.seed: 42
+        prepare.target: Label
+        train.logistic_regression:
+          max_iter: 1000
+          class_weight: balanced
+    outs:
+    - path: evaluation/logistic_regression/validation_metrics.json
+      hash: md5
+      md5: d9b643025fe2886b368bc93977c2b9a1
+      size: 260
+    - path: models/logistic_regression
+      hash: md5
+      md5: af315a196023db6cf3619e783c7cc809.dir
+      size: 5378
+      nfiles: 2
+  train@random_forest:
+    cmd: python src/train.py random_forest
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    - path: src/models/base.py
+      hash: md5
+      md5: a6a404ce9932d71df76ebc5a0886a314
+      size: 1018
+    - path: src/models/random_forest.py
+      hash: md5
+      md5: 14cf7cce4ae29c12424c5a1c003355f5
+      size: 918
+    - path: src/train.py
+      hash: md5
+      md5: 3bde16c0574965733e9fa7638ead7fdd
+      size: 6040
+    params:
+      params.yaml:
+        prepare.seed: 42
+        prepare.target: Label
+        train.random_forest:
+          n_estimators: 150
+          max_depth: 16
+          min_samples_leaf: 3
+          class_weight: balanced_subsample
+    outs:
+    - path: evaluation/random_forest/validation_metrics.json
+      hash: md5
+      md5: 8efafc5691712cf60c2d7dcf6df1576b
+      size: 239
+    - path: models/random_forest
+      hash: md5
+      md5: 53c48d40e1732868f378046cd3103149.dir
+      size: 1494167
+      nfiles: 2
+  train@autoencoder:
+    cmd: python src/train.py autoencoder
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    - path: src/models/autoencoder.py
+      hash: md5
+      md5: 301b9c81805b23e5b541409008edec81
+      size: 2748
+    - path: src/models/base.py
+      hash: md5
+      md5: a6a404ce9932d71df76ebc5a0886a314
+      size: 1018
+    - path: src/train.py
+      hash: md5
+      md5: 3bde16c0574965733e9fa7638ead7fdd
+      size: 6040
+    params:
+      params.yaml:
+        prepare.seed: 42
+        prepare.target: Label
+        train.autoencoder:
+          hidden_layer_sizes:
+          - 32
+          - 8
+          - 32
+          max_iter: 200
+          train_cap: 200000
+          false_positive_target: 0.01
+    outs:
+    - path: evaluation/autoencoder/validation_metrics.json
+      hash: md5
+      md5: 2d2101997470ea0b3d58916215b7d65f
+      size: 247
+    - path: models/autoencoder
+      hash: md5
+      md5: 1f650e76d0170b7da9eaa13157d88940.dir
+      size: 86099
+      nfiles: 2
+  evaluate@dummy:
+    cmd: python src/evaluate.py dummy
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: models/dummy
+      hash: md5
+      md5: 7107787e02516864ace5b538d751309f.dir
+      size: 2796
+      nfiles: 2
+    - path: src/evaluate.py
+      hash: md5
+      md5: 91f6da82ea97dd6a146d3639fff8f9c2
+      size: 7505
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    params:
+      params.yaml:
+        prepare.target: Label
+    outs:
+    - path: evaluation/dummy/metrics.json
+      hash: md5
+      md5: 68c569dd1d72acb4e87467f29787aaf8
+      size: 317
+    - path: evaluation/dummy/plots
+      hash: md5
+      md5: 6f466602eaadb6863abca1413eddc88e.dir
+      size: 76530
+      nfiles: 2
+  evaluate@logistic_regression:
+    cmd: python src/evaluate.py logistic_regression
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: models/logistic_regression
+      hash: md5
+      md5: af315a196023db6cf3619e783c7cc809.dir
+      size: 5378
+      nfiles: 2
+    - path: src/evaluate.py
+      hash: md5
+      md5: 91f6da82ea97dd6a146d3639fff8f9c2
+      size: 7505
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    params:
+      params.yaml:
+        prepare.target: Label
+    outs:
+    - path: evaluation/logistic_regression/metrics.json
+      hash: md5
+      md5: 5a23f64586ae00b28635bd32e63cde04
+      size: 390
+    - path: evaluation/logistic_regression/plots
+      hash: md5
+      md5: 5745628f81a51c2b199ea47ba84b6979.dir
+      size: 90530
+      nfiles: 2
+  evaluate@random_forest:
+    cmd: python src/evaluate.py random_forest
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: models/random_forest
+      hash: md5
+      md5: 53c48d40e1732868f378046cd3103149.dir
+      size: 1494167
+      nfiles: 2
+    - path: src/evaluate.py
+      hash: md5
+      md5: 91f6da82ea97dd6a146d3639fff8f9c2
+      size: 7505
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    params:
+      params.yaml:
+        prepare.target: Label
+    outs:
+    - path: evaluation/random_forest/metrics.json
+      hash: md5
+      md5: c42169d5eabcff7800e3a1b81aa7366c
+      size: 384
+    - path: evaluation/random_forest/plots
+      hash: md5
+      md5: ffc558cf7500ec68176ba14a0d405d98.dir
+      size: 81005
+      nfiles: 2
+  evaluate@autoencoder:
+    cmd: python src/evaluate.py autoencoder
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: models/autoencoder
+      hash: md5
+      md5: 1f650e76d0170b7da9eaa13157d88940.dir
+      size: 86099
+      nfiles: 2
+    - path: src/evaluate.py
+      hash: md5
+      md5: 91f6da82ea97dd6a146d3639fff8f9c2
+      size: 7505
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    params:
+      params.yaml:
+        prepare.target: Label
+    outs:
+    - path: evaluation/autoencoder/metrics.json
+      hash: md5
+      md5: 190cd575d4ac8bd696c0f73cfa60ea50
+      size: 383
+    - path: evaluation/autoencoder/plots
+      hash: md5
+      md5: e752133693233d0a9a7d860f5a93688b.dir
+      size: 87782
+      nfiles: 2
+  drift@random_forest:
+    cmd: python src/drift.py random_forest
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: data/raw/NF-CICIDS2018-v3.parquet
+      hash: md5
+      md5: b0e1598b41abd82db42e4fbc150b7433
+      size: 832352170
+    - path: models/random_forest
+      hash: md5
+      md5: 53c48d40e1732868f378046cd3103149.dir
+      size: 1494167
+      nfiles: 2
+    - path: src/drift.py
+      hash: md5
+      md5: 13126a19fa8d9f9ede3741dbfc40dd5b
+      size: 11849
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    - path: src/models/base.py
+      hash: md5
+      md5: a6a404ce9932d71df76ebc5a0886a314
+      size: 1018
+    - path: src/models/random_forest.py
+      hash: md5
+      md5: 14cf7cce4ae29c12424c5a1c003355f5
+      size: 918
+    params:
+      params.yaml:
+        drift:
+          sample_fraction: 0.2
+          min_flows_per_day: 10000
+          retrain_cap: 1500000
+          psi_sample: 200000
+          psi_alert: 0.25
+        prepare.seed: 42
+        prepare.target: Label
+        train.random_forest:
+          n_estimators: 150
+          max_depth: 16
+          min_samples_leaf: 3
+          class_weight: balanced_subsample
+    outs:
+    - path: evaluation/random_forest/drift/days.csv
+      hash: md5
+      md5: 257b8c85131316a4bfd88b5aab794e3e
+      size: 3265
+    - path: evaluation/random_forest/drift/families.csv
+      hash: md5
+      md5: 2289d78581fbfa6527cf97a4fecda65c
+      size: 799
+    - path: evaluation/random_forest/drift/summary.json
+      hash: md5
+      md5: 90e265b7d27ddec61a5059d1cec6c5cc
+      size: 406
+  drift@autoencoder:
+    cmd: python src/drift.py autoencoder
+    deps:
+    - path: data/prepared
+      hash: md5
+      md5: b7fac31c9a99f41eb5fc75e375e06eac.dir
+      size: 28427003
+      nfiles: 5
+    - path: data/raw/NF-CICIDS2018-v3.parquet
+      hash: md5
+      md5: b0e1598b41abd82db42e4fbc150b7433
+      size: 832352170
+    - path: models/autoencoder
+      hash: md5
+      md5: 1f650e76d0170b7da9eaa13157d88940.dir
+      size: 86099
+      nfiles: 2
+    - path: src/drift.py
+      hash: md5
+      md5: 13126a19fa8d9f9ede3741dbfc40dd5b
+      size: 11849
+    - path: src/models/__init__.py
+      hash: md5
+      md5: 9a6867a2262aff2b66a382b783dbb328
+      size: 1590
+    - path: src/models/autoencoder.py
+      hash: md5
+      md5: 301b9c81805b23e5b541409008edec81
+      size: 2748
+    - path: src/models/base.py
+      hash: md5
+      md5: a6a404ce9932d71df76ebc5a0886a314
+      size: 1018
+    params:
+      params.yaml:
+        drift:
+          sample_fraction: 0.2
+          min_flows_per_day: 10000
+          retrain_cap: 1500000
+          psi_sample: 200000
+          psi_alert: 0.25
+        prepare.seed: 42
+        prepare.target: Label
+        train.autoencoder:
+          hidden_layer_sizes:
+          - 32
+          - 8
+          - 32
+          max_iter: 200
+          train_cap: 200000
+          false_positive_target: 0.01
+    outs:
+    - path: evaluation/autoencoder/drift/days.csv
+      hash: md5
+      md5: 73c7230e9f95dba3785173620ae6dfdd
+      size: 3208
+    - path: evaluation/autoencoder/drift/families.csv
+      hash: md5
+      md5: 52186f6830cfb6e9c08bd2284a7f2332
+      size: 810
+    - path: evaluation/autoencoder/drift/summary.json
+      hash: md5
+      md5: 6020a39bd4a720125839f5ae10868896
+      size: 404
+  package:
+    cmd: python src/package.py
+    deps:
+    - path: models/random_forest
+      hash: md5
+      md5: 53c48d40e1732868f378046cd3103149.dir
+      size: 1494167
+      nfiles: 2
+    - path: src/package.py
+      hash: md5
+      md5: 4e91503ca97638776b3f5c995a062e08
+      size: 2677
+    params:
+      params.yaml:
+        deploy:
+          model: random_forest
+    outs:
+    - path: models/model_info.json
+      hash: md5
+      md5: 5ab311f59bde29ba3f82bee2df2eba58
+      size: 1245
+    - path: models/network_intrusion_classifier.bentomodel
+      hash: md5
+      md5: 65c17d3faf90b3b39dcc217ff53d1a02
+      size: 438736
